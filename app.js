@@ -308,34 +308,155 @@ function updateAdaEvaluation() {
 }
 
 // -------------------------------------------------------------
-// 4. BCAA DIABETES RISK CALCULATOR (WANG ET AL. 2011)
+// 4. BCAA DIABETES RISK CALCULATOR (WANG ET AL. 2011) & QUARTILE RANGES
 // -------------------------------------------------------------
+const bcaaQuartileData = [
+    {
+        qNum: 1,
+        label: "Quartile 1 (Lowest 25%)",
+        badge: "QUARTILE 1 (OPTIMAL BASELINE)",
+        total: "< 350 μM",
+        totalSub: "(typically 290–350 μM)",
+        valine: "< 195 μM",
+        leucine: "< 105 μM",
+        isoleucine: "< 55 μM",
+        hr: "1.00x",
+        risk: "~2.1% 12-Year Conversion",
+        badgeBg: "var(--bg-alt-light)",
+        badgeColor: "var(--navy-dark)",
+        badgeBorder: "var(--border-gray)",
+        statusClass: "alert-success",
+        pathway: "BCKD multienzyme complex normally decarboxylates BCAAs in skeletal muscle and adipose tissue. mTORC1 signaling remains physiological; IRS-1 serine phosphorylation is at baseline."
+    },
+    {
+        qNum: 2,
+        label: "Quartile 2 (25%–50%)",
+        badge: "QUARTILE 2 (LOW-NORMAL)",
+        total: "350–405 μM",
+        totalSub: "",
+        valine: "195–225 μM",
+        leucine: "105–125 μM",
+        isoleucine: "55–65 μM",
+        hr: "1.84x",
+        risk: "~3.9% 12-Year Conversion",
+        badgeBg: "var(--bg-alt-light)",
+        badgeColor: "var(--navy-dark)",
+        badgeBorder: "var(--border-gray)",
+        statusClass: "alert-success",
+        pathway: "Mild down-regulation of adipose and skeletal muscle BCKD. Circulating BCAA concentrations begin subtle ascension, but cellular compensation prevents overt pathway blockade."
+    },
+    {
+        qNum: 3,
+        label: "Quartile 3 (50%–75%)",
+        badge: "QUARTILE 3 (MODERATE ELEVATION)",
+        total: "405–465 μM",
+        totalSub: "",
+        valine: "225–255 μM",
+        leucine: "125–145 μM",
+        isoleucine: "65–78 μM",
+        hr: "2.95x",
+        risk: "~6.2% 12-Year Conversion",
+        badgeBg: "rgba(255, 201, 6, 0.2)",
+        badgeColor: "var(--navy-dark)",
+        badgeBorder: "var(--gold)",
+        statusClass: "alert-warning",
+        pathway: "Moderate BCKD enzymatic impairment. Rising Leucine concentrations begin to over-activate mTORC1 and downstream p70S6K1, initiating inhibitory IRS-1 Ser312 phosphorylation and early muscle insulin resistance."
+    },
+    {
+        qNum: 4,
+        label: "Quartile 4 (Highest 25%)",
+        badge: "QUARTILE 4 (HIGH RISK / >5X HAZARD)",
+        total: "> 465 μM",
+        totalSub: "(typically 470–600+ μM)",
+        valine: "> 255 μM",
+        leucine: "> 145 μM",
+        isoleucine: "> 78 μM",
+        hr: "5.24x",
+        risk: "~11.0% 12-Year Conversion (>5-Fold Higher!)",
+        badgeBg: "var(--crimson)",
+        badgeColor: "#FFFFFF",
+        badgeBorder: "var(--crimson)",
+        statusClass: "alert-crimson",
+        pathway: "Impaired BCKD activity causes severe accumulation of Leucine, Isoleucine, and Valine. Excessive Leucine constitutively activates mTORC1/p70S6K1, triggering inhibitory phosphorylation of IRS-1 at Ser312/Ser636 and uncoupling insulin signaling from GLUT4 translocation!"
+    }
+];
+
 function initBcaaCalculator() {
     const qRange = document.getElementById('bcaaWebSlider');
-    if (!qRange) return;
+    if (qRange) {
+        qRange.addEventListener('input', updateBcaaCalculation);
+    }
 
-    qRange.addEventListener('input', updateBcaaCalculation);
+    // Attach click handlers to Quartile Table rows
+    const bcaaRows = document.querySelectorAll('.bcaa-row');
+    bcaaRows.forEach(row => {
+        row.addEventListener('click', () => {
+            const qVal = parseInt(row.getAttribute('data-q'), 10);
+            if (qRange && !isNaN(qVal)) {
+                qRange.value = qVal;
+                updateBcaaCalculation();
+            }
+        });
+    });
+
     updateBcaaCalculation();
 }
 
 function updateBcaaCalculation() {
-    const q = parseInt(document.getElementById('bcaaWebSlider').value, 10);
-    const qLabels = ['Quartile 1 (Lowest 25%)', 'Quartile 2 (25–50%)', 'Quartile 3 (50–75%)', 'Quartile 4 (Highest 25%)'];
-    const hrs = [1.00, 1.84, 2.95, 5.24];
-    const riskRates = ['~2.1% 12-Year Conversion', '~3.9% 12-Year Conversion', '~6.2% 12-Year Conversion', '~11.0% 12-Year Conversion (>5-Fold Higher!)'];
+    const qRange = document.getElementById('bcaaWebSlider');
+    if (!qRange) return;
+    const q = parseInt(qRange.value, 10);
+    const data = bcaaQuartileData[q - 1];
+    if (!data) return;
 
-    document.getElementById('bcaaQText').innerText = qLabels[q - 1];
-    document.getElementById('bcaaHrText').innerText = `${hrs[q - 1].toFixed(2)}x`;
-    document.getElementById('bcaaRiskText').innerText = riskRates[q - 1];
+    const qTextElem = document.getElementById('bcaaQText');
+    if (qTextElem) qTextElem.innerText = data.label;
 
-    const pathwayElem = document.getElementById('bcaaPathwayDynamicText');
-    if (q <= 2) {
-        pathwayElem.className = 'result-callout alert-success';
-        pathwayElem.innerText = "BCKD multienzyme complex normally decarboxylates BCAAs in skeletal muscle and adipose tissue. mTORC1 signaling remains physiological; IRS-1 serine phosphorylation is at baseline.";
-    } else {
-        pathwayElem.className = 'result-callout alert-warning';
-        pathwayElem.innerText = "Impaired BCKD activity causes accumulation of Leucine, Isoleucine, and Valine. Excessive Leucine constitutively activates mTORC1/p70S6K1, triggering inhibitory phosphorylation of IRS-1 at Ser312/Ser636 and uncoupling insulin signaling from GLUT4 translocation!";
+    const hrElem = document.getElementById('bcaaHrText');
+    if (hrElem) hrElem.innerText = data.hr;
+
+    const riskElem = document.getElementById('bcaaRiskText');
+    if (riskElem) riskElem.innerText = data.risk;
+
+    // Dynamic Concentration Ranges
+    const totalElem = document.getElementById('bcaaTotalText');
+    if (totalElem) {
+        totalElem.innerHTML = `${data.total}${data.totalSub ? ` <span style="font-size: 10px; font-weight: normal; color: var(--text-muted); display: block;">${data.totalSub}</span>` : ''}`;
     }
+
+    const valElem = document.getElementById('bcaaValText');
+    if (valElem) valElem.innerText = data.valine;
+
+    const leuElem = document.getElementById('bcaaLeuText');
+    if (leuElem) leuElem.innerText = data.leucine;
+
+    const ileElem = document.getElementById('bcaaIleText');
+    if (ileElem) ileElem.innerText = data.isoleucine;
+
+    const windowBadge = document.getElementById('bcaaWindowBadge');
+    if (windowBadge) {
+        windowBadge.innerText = data.badge;
+        windowBadge.style.backgroundColor = data.badgeBg;
+        windowBadge.style.color = data.badgeColor;
+        windowBadge.style.borderColor = data.badgeBorder;
+    }
+
+    // Molecular Pathway Callout
+    const pathwayElem = document.getElementById('bcaaPathwayDynamicText');
+    if (pathwayElem) {
+        pathwayElem.className = `result-callout ${data.statusClass}`;
+        pathwayElem.innerText = data.pathway;
+    }
+
+    // Sync Active Table Row
+    document.querySelectorAll('.bcaa-row').forEach(row => {
+        const rowQ = parseInt(row.getAttribute('data-q'), 10);
+        if (rowQ === q) {
+            row.classList.add('active-row');
+        } else {
+            row.classList.remove('active-row');
+        }
+    });
 }
 
 // -------------------------------------------------------------
@@ -495,33 +616,33 @@ function updateApobDiscordance() {
 // 8. MASTER BIOMARKER DATABASE SEARCH & FILTER
 // -------------------------------------------------------------
 const compendiumData = [
-    { name: "Fasting Plasma Glucose (FPG)", domain: "Diabetes", type: "Classical", discovery: "1910s (Folin-Wu / Somogyi)", origin: "Liver (Basal gluconeogenesis)", class: "Hexose Monosaccharide", function: "Reflects overnight basal hepatic glucose output; evaluates fasting insulin action.", status: "ADA 2026 Core Diagnostic (≥126 mg/dL / 7.0 mmol/L)" },
-    { name: "Glycated Hemoglobin (HbA1c)", domain: "Diabetes", type: "Classical", discovery: "1968 (Rahbar) / DCCT 1993", origin: "Circulating Erythrocytes", class: "Glycated Protein (Amadori)", function: "120-day cumulative erythrocyte ketoamine glycation of hemoglobin beta chains.", status: "ADA 2026 Core Diagnostic (≥6.5% / 48 mmol/mol)" },
-    { name: "2-Hour OGTT (75g)", domain: "Diabetes", type: "Classical", discovery: "1920s (Conn & Fajans)", origin: "Skeletal Muscle & Liver", class: "Dynamic Metabolic Challenge", function: "Postprandial glucose clearance and skeletal muscle insulin-stimulated uptake.", status: "ADA 2026 Core Diagnostic (≥200 mg/dL / 11.1 mmol/L)" },
-    { name: "Branched-Chain Amino Acids (BCAAs)", domain: "Diabetes", type: "Novel", discovery: "2009 (Newgard) / 2011 (Wang)", origin: "Dietary Protein / Muscle Catabolism", class: "Essential Amino Acids (Leu, Ile, Val)", function: "BCKD metabolic blockade -> mTORC1 hyperactivation -> inhibitory IRS-1 Ser312 phosphorylation.", status: "Investigational Early Predictor (>5-fold HR in Q4, Wang 2011)" },
-    { name: "Circulating microRNA-126 (miR-126)", domain: "Diabetes", type: "Novel", discovery: "2010 (Zampetaki et al. Circ Res)", origin: "Vascular Endothelial Cells", class: "Endothelial Non-Coding RNA (~22 nt)", function: "Silences SPRED1 to preserve VEGF/ERK and endothelial eNOS survival; lost in hyperglycemia.", status: "Research Liquid Biopsy (Loss predicts subclinical microangiopathy)" },
-    { name: "Glycated Albumin (GA)", domain: "Diabetes", type: "Novel", discovery: "1980s / Standardized 2000s", origin: "Serum Albumin (Liver)", class: "Glycated Ketoamine Protein", function: "Measures 2–3 week glycemic window; completely unbiased by hemolytic anemia or RBC turnover.", status: "Specialized Clinical Use (Complement to HbA1c in renal/hemoglobinopathy)" },
-    { name: "Continuous Glucose Monitoring (TIR)", domain: "Diabetes", type: "Novel", discovery: "2017–2019 Consensus Standards", origin: "Interstitial Fluid Sensor", class: "Sensor Metric (% Time in Range)", function: "Captures 24/7 glucose variability; target >70% within 70–180 mg/dL.", status: "Established Clinical Management Tool (Insufficient for diagnosis per ADA 2026)" },
-    { name: "6-Protein Risk Signature (Xie 2025)", domain: "Diabetes", type: "Novel", discovery: "2025 (Xie et al. Diabetes Care)", origin: "Multi-Organ Secretome", class: "Multiplex Proteomics (Olink)", function: "Early multi-organ inflammatory and metabolic pathway stress before beta-cell apoptosis.", status: "Research Translation (+0.014 external C-index gain in UK Biobank)" },
-    { name: "Body Mass Index (BMI)", domain: "Obesity", type: "Classical", discovery: "1832 (Adolphe Quetelet)", origin: "Whole-Body Weight / Height²", class: "Anthropometric Ratio", function: "Crude population surrogate for body bulk; completely blind to visceral vs lean muscle mass.", status: "Established Screening (Lancet 2025: Insufficient for clinical organ disease)" },
-    { name: "Waist Circumference & WHR", domain: "Obesity", type: "Classical", discovery: "1980s (Vague / Bjorntorp)", origin: "Abdominal Depot Topography", class: "Anthropometric Circumference", function: "Surrogate for deep intra-abdominal visceral adipose tissue (VAT) accumulation.", status: "Cardiometabolic Risk-Enhancing Screening Criterion" },
-    { name: "Leptin", domain: "Obesity", type: "Novel", discovery: "1994 (Jeffrey Friedman, Nature)", origin: "Mature White Adipocytes", class: "16-kDa Peptide Hormone (167 AA)", function: "Crosses blood-brain barrier -> LepRb -> excites POMC satiety neurons & represses NPY/AgRP hunger.", status: "Diagnostic in Rare Monogenic Deficiency (Farooqi 1999); Elevated in Common Resistance" },
-    { name: "Adiponectin", domain: "Obesity", type: "Novel", discovery: "1995 (Scherer et al. / Maeda)", origin: "Healthy White Adipocytes", class: "30-kDa Insulin-Sensitizing Adipokine", function: "Binds AdipoR1/R2 -> activates AMPK & PPAR-alpha -> stimulates fatty acid oxidation.", status: "Specialized/Research (Paradoxically collapsed in hypertrophic obesity, SMD = -1.25)" },
-    { name: "Resistin", domain: "Obesity", type: "Novel", discovery: "2001 (Steppan & Lazar, Nature)", origin: "Infiltrating Monocytes/Macrophages", class: "12.5-kDa Cysteine-Rich Secretokine", function: "Binds TLR4 / CAP1 -> activates NF-kB -> provokes vascular cell adhesion molecule-1 and insulin resistance.", status: "Research Biomarker (Vascular bed inflammation and atherosclerosis)" },
-    { name: "Fibroblast Growth Factor 21 (FGF21)", domain: "Obesity", type: "Novel", discovery: "2000 (Nishimura) / 2005 (Kharitonenkov)", origin: "Liver, Adipose & Skeletal Muscle", class: "Endocrine Metabolic Hormone", function: "Acts via beta-Klotho / FGFR1c complex -> stimulates brown fat thermogenesis and hepatic lipid clearance.", status: "Research / Therapeutic Target (Elevated in hepatic steatosis & metabolic stress)" },
-    { name: "Growth Differentiation Factor 15 (GDF15)", domain: "Obesity", type: "Novel", discovery: "1997 (Bootcov) / 2017 (GFRAL)", origin: "Stressed Macrophages, Liver, Kidney", class: "Stress-Responsive Cytokine (TGF-beta)", function: "Binds exclusively to hindbrain GFRAL-RET receptor complex to suppress food intake and trigger satiety.", status: "Active Clinical Drug Target / Biomarker for Mitochondrial & Metabolic Stress" },
-    { name: "Leptin-to-Adiponectin Ratio (L/A)", domain: "Obesity", type: "Novel", discovery: "2005–2010 / Meta-Analysis 2026", origin: "Adipose Secretome Integration", class: "Calculated Hormone Ratio", function: "Combines an elevated numerator (leptin) with collapsed denominator (adiponectin); reflects adipose failure.", status: "Integrated Research Metric (Stronger predictor of metabolic syndrome than BMI alone)" },
-    { name: "LDL Cholesterol (LDL-C)", domain: "CVD", type: "Classical", discovery: "1950s (Gofman) / Friedewald 1972", origin: "Plasma Lipoprotein Fraction", class: "Lipoprotein Cholesterol Mass", function: "Carries esterified cholesterol; when retained in subendothelium, initiates atherogenesis.", status: "Primary Guideline Treatment Target (Statins, Ezetimibe, PCSK9 inhibitors)" },
-    { name: "Cardiac Troponin (cTnI / cTnT)", domain: "CVD", type: "Classical", discovery: "1989 (Katus) / hs-cTn 2010s", origin: "Cardiomyocyte Sarcomere", class: "Contractile Structural Protein", function: "Gold standard indicator of acute cardiomyocyte membrane disruption and myocardial necrosis.", status: "Universal Definition of Acute Myocardial Infarction (NOT for primary asymptomatic screening)" },
-    { name: "BNP / NT-proBNP", domain: "CVD", type: "Classical", discovery: "1988 (Sudoh) / 1990s Clinical Use", origin: "Ventricular Myocytes", class: "Natriuretic Pro-Peptide", function: "Released in direct response to ventricular wall stretch and elevated intracardiac filling pressure.", status: "First-Line Diagnostic & Prognostic Guideline Marker in Heart Failure" },
-    { name: "High-Sensitivity CRP (hs-CRP)", domain: "CVD", type: "Classical", discovery: "1930 (Tillett) / hs-Assay 1990s", origin: "Liver (Hepatic Acute Phase)", class: "Pattern Recognition Pentraxin", function: "Synthesized in response to IL-6; activates classical complement cascade in vascular lesions.", status: "Established Cardiovascular Risk-Enhancer in Borderline Primary Prevention" },
-    { name: "Lipoprotein(a) [Lp(a)]", domain: "CVD", type: "Novel", discovery: "1963 (Kåre Berg)", origin: "Liver (ApoB-100 linked to Apo(a))", class: "Genetically Determined Lipoprotein", function: "Triple threat: Atherogenic core, pro-thrombotic (plasminogen competition), carries oxidized phospholipids.", status: "2026 ACC/AHA Guideline: Universal Once-in-Lifetime Screen (≥125 nmol/L / ~50 mg/dL)" },
-    { name: "Apolipoprotein B (ApoB)", domain: "CVD", type: "Novel", discovery: "1970s / Standardized 2010s", origin: "Liver (VLDL/LDL) & Gut (Chylomicrons)", class: "Structural Lipoprotein Scaffold", function: "1:1 Stoichiometric Law: Exactly ONE ApoB per atherogenic particle; unmasks small dense LDL discordance.", status: "Strongly Endorsed by 2026 Guidelines for Hypertriglyceridemia, Diabetes & Obesity" },
-    { name: "GlycA (NMR Spectral Signal)", domain: "CVD", type: "Novel", discovery: "2014 (Otvos et al. Clin Chem)", origin: "Circulating Acute-Phase Glycoproteins", class: "Proton NMR Composite Signal", function: "Quantifies N-acetylglucosamine branching on acute-phase proteins; captures chronic vascular bed inflammation.", status: "Investigational Advanced Diagnostic (High analytical precision; superior to single hs-CRP)" },
-    { name: "Ceramides (CERT2 Score)", domain: "CVD", type: "Novel", discovery: "2016–2020 (Hilvo & Laaksonen)", origin: "Vascular Endothelium & Liver", class: "Bioactive Sphingolipids (Cer d18:1)", function: "Uncouples endothelial nitric oxide synthase (eNOS), promotes LDL aggregation and fibrous cap thinning.", status: "Specialized Clinical Reference Labs (Mayo Clinic, Zora); Secondary MI Prediction" },
-    { name: "CHIP Somatic Mutations", domain: "CVD", type: "Novel", discovery: "2017 (Jaiswal & Ebert, NEJM)", origin: "Bone Marrow Hematopoietic Stem Cells", class: "Somatic Clonal DNA Mutations (TET2)", function: "Clonal leukocyte expansion; mutant macrophages hypersecrete IL-1beta/IL-6, causing 2-fold CAD risk.", status: "Investigational via Targeted Deep NGS (Identifies age-dependent non-lipid inflammatory CAD)" },
-    { name: "Trimethylamine N-oxide (TMAO)", domain: "CVD", type: "Novel", discovery: "2011 (Wang & Hazen) / 2013 (Tang)", origin: "Diet -> Gut Microbes -> Liver FMO3", class: "Microbial-Host Co-Metabolite", function: "Upregulates CD36/SR-A1 macrophage foam cell receptors and increases platelet stimulus-dependent Ca2+ release.", status: "Investigational Gut-Cardiovascular Biomarker (Direct mechanistic link between red meat & CAD)" },
-    { name: "AI 9-Protein CAD Signature", domain: "CVD", type: "Novel", discovery: "2026 (Huang et al. JAHA)", origin: "Vascular & Immune Circulating Proteome", class: "Machine Learning Multiplex Proteomics", function: "Machine learning integration of vascular remodeling (MMP-12) and inflammatory chemokines (CXCL9, CCL19).", status: "Research Validation (+0.045 AUC gain to 0.762 over clinical factors in UK Biobank)" }
+    { name: "Fasting Plasma Glucose (FPG)", domain: "Diabetes", type: "Traditional", class: "Metabolite (Hexose)", function: "Hepatic gluconeogenesis & baseline fasting glycemia", status: "ADA 2026 Diagnostic (≥126 mg/dL / 7.0 mmol/L)" },
+    { name: "Glycated Hemoglobin (HbA1c)", domain: "Diabetes", type: "Traditional", class: "Glycated Protein", function: "120-day cumulative erythrocyte ketoamine glycation", status: "ADA 2026 Diagnostic (≥6.5% / 48 mmol/mol)" },
+    { name: "2-Hour OGTT", domain: "Diabetes", type: "Traditional", class: "Challenge Test", function: "Peripheral muscle glucose disposal following 75g load", status: "ADA 2026 Diagnostic (≥200 mg/dL / 11.1 mmol/L)" },
+    { name: "Branched-Chain Amino Acids (BCAAs)", domain: "Diabetes", type: "Novel", class: "Essential Amino Acids", function: "mTORC1 hyperactivation -> inhibitory IRS-1 Ser312 phosphorylation", status: "Investigational Predictor (>5x HR in Q4, Wang 2011)" },
+    { name: "Circulating microRNA-126 (miR-126)", domain: "Diabetes", type: "Novel", class: "Non-Coding RNA (~22 nt)", function: "Endothelial SPRED1/PIK3R2 repression & VEGF signaling", status: "Research Liquid Biopsy (Loss marks vascular injury, Zampetaki 2010)" },
+    { name: "Glycated Albumin (GA)", domain: "Diabetes", type: "Novel", class: "Glycated Serum Protein", function: "2–3 week intermediate glycemic window", status: "Specialized Clinical Use (Unaffected by RBC turnover)" },
+    { name: "CGM Time-in-Range (TIR)", domain: "Diabetes", type: "Novel", class: "Sensor Metric", function: "% time interstitial glucose 70–180 mg/dL (target >70%)", status: "Established Management Tool (Insufficient for Diagnosis per ADA 2026)" },
+    { name: "6-Protein Risk Signature (Xie 2025)", domain: "Diabetes", type: "Novel", class: "Multiplex Proteomics", function: "Pre-disease multi-organ metabolic/inflammatory risk", status: "Research Phase (+0.014 C-index gain in UK Biobank)" },
+    { name: "Body Mass Index (BMI)", domain: "Obesity", type: "Traditional", class: "Anthropometric Ratio", function: "Population screening proxy for body mass", status: "Established Screening (Limited: misses body composition)" },
+    { name: "Waist Circumference & WHR", domain: "Obesity", type: "Traditional", class: "Anthropometric Metric", function: "Central intra-abdominal visceral adiposity surrogate", status: "Established Risk-Enhancer in Cardiometabolic Screening" },
+    { name: "Leptin", domain: "Obesity", type: "Novel", class: "16-kDa Peptide Hormone", function: "Hypothalamic LepRb satiety loop (POMC activation / AgRP inhibition)", status: "Elevated in Obesity (Resistance); Diagnostic in Congenital Deficiency (Farooqi 1999)" },
+    { name: "Adiponectin", domain: "Obesity", type: "Novel", class: "30-kDa Adipokine", function: "Activates AdipoR1/R2, AMPK & PPAR-alpha; anti-inflammatory", status: "Research/Specialized (Paradoxically collapsed in obesity)" },
+    { name: "Resistin", domain: "Obesity", type: "Novel", class: "12.5-kDa Cysteine-Rich Peptide", function: "Human monocyte inflammatory cytokine (TLR4/CAP1 -> NF-kB)", status: "Research Phase (Vascular inflammation)" },
+    { name: "Fibroblast Growth Factor 21 (FGF21)", domain: "Obesity", type: "Novel", class: "Endocrine Metabolic Hormone", function: "beta-Klotho/FGFR1c brown fat thermogenesis & lipid clearance", status: "Research Phase (Elevated in metabolic stress)" },
+    { name: "Growth Differentiation Factor 15 (GDF15)", domain: "Obesity", type: "Novel", class: "Stress-Induced Cytokine", function: "Hindbrain GFRAL receptor food-intake brake & nausea", status: "Research / Active Clinical Trial Drug Target" },
+    { name: "Leptin-to-Adiponectin Ratio (L/A)", domain: "Obesity", type: "Novel", class: "Calculated Adipokine Ratio", function: "Integrated surrogate index of adipose tissue dysfunction", status: "Research Index (Sunita et al. 2026 Meta-Analysis)" },
+    { name: "LDL Cholesterol (LDL-C)", domain: "CVD", type: "Traditional", class: "Lipoprotein Cholesterol Mass", function: "Atherogenic lipid carrier & plaque core component", status: "Primary Guideline Treatment Target (Statins, Ezetimibe, PCSK9)" },
+    { name: "Cardiac Troponin (cTnI / cTnT)", domain: "CVD", type: "Traditional", class: "Contractile Sarcomere Protein", function: "Cardiomyocyte necrosis indicator", status: "Gold Standard Acute MI (NOT asymptomatic general screening)" },
+    { name: "BNP / NT-proBNP", domain: "CVD", type: "Traditional", class: "Natriuretic Peptide", function: "Ventricular myocyte hemodynamic wall stress indicator", status: "Established Heart Failure Diagnosis & Prognosis" },
+    { name: "High-Sensitivity CRP (hs-CRP)", domain: "CVD", type: "Traditional", class: "Acute-Phase Pentraxin", function: "Hepatic systemic inflammation response to IL-6", status: "Established Risk-Enhancer in Intermediate Risk" },
+    { name: "Lipoprotein(a) [Lp(a)]", domain: "CVD", type: "Novel", class: "LDL Core + Apolipoprotein(a)", function: "Atherogenic, antifibrinolytic (plasminogen homology), carries OxPL", status: "2026 ACC/AHA Guideline: Universal Test ≥ 125 nmol/L (~50 mg/dL)" },
+    { name: "Apolipoprotein B (ApoB)", domain: "CVD", type: "Novel", class: "Apolipoprotein (1:1 Particle Law)", function: "Quantifies total absolute atherogenic particle number", status: "Established; Strongly Endorsed by ACC/AHA for Discordance" },
+    { name: "GlycA", domain: "CVD", type: "Novel", class: "NMR Glycoprotein Signal", function: "Captures chronic low-grade vascular bed inflammation", status: "Investigational on Specialized Clinical NMR Platforms" },
+    { name: "Ceramides (CERT2 Score)", domain: "CVD", type: "Novel", class: "Bioactive Sphingolipids", function: "Endothelial eNOS uncoupling & fibrous cap destabilization", status: "Specialized Reference Labs (Mayo Clinic, Zora); Secondary Prevention" },
+    { name: "CHIP Somatic Mutations", domain: "CVD", type: "Novel", class: "Somatic Stem Cell Mutation (TET2)", function: "Clonal expansion of hyper-inflammatory macrophages (IL-1beta/IL-6)", status: "Investigational via Deep Targeted NGS (~2x CAD Risk, Jaiswal 2017)" },
+    { name: "Trimethylamine N-oxide (TMAO)", domain: "CVD", type: "Novel", class: "Gut Microbial Metabolite", function: "Upregulates CD36 foam cells & platelet hyperreactivity", status: "Investigational Research Marker (Tang et al. 2013)" },
+    { name: "AI 9-Protein Panel (Huang 2026)", domain: "CVD", type: "Novel", class: "Machine Learning Proteomics", function: "Combinatorial CAD risk discrimination in UK Biobank", status: "Research Validation (+0.045 AUC gain to 0.762, Huang 2026 JAHA)" }
 ];
 
 function initCompendiumSearch() {
@@ -552,8 +673,6 @@ function renderCompendiumTable() {
 
     const filtered = compendiumData.filter(item => {
         const matchesQuery = item.name.toLowerCase().includes(query) ||
-                             item.discovery.toLowerCase().includes(query) ||
-                             item.origin.toLowerCase().includes(query) ||
                              item.class.toLowerCase().includes(query) ||
                              item.function.toLowerCase().includes(query) ||
                              item.status.toLowerCase().includes(query);
@@ -561,43 +680,25 @@ function renderCompendiumTable() {
         let matchesFilter = true;
         if (activeFilter !== 'all') {
             matchesFilter = (item.domain.toLowerCase() === activeFilter) ||
-                            (item.type.toLowerCase() === activeFilter) ||
-                            (activeFilter === 'traditional' && item.type.toLowerCase() === 'classical') ||
-                            (activeFilter === 'classical' && item.type.toLowerCase() === 'classical');
+                            (item.type.toLowerCase() === activeFilter);
         }
         return matchesQuery && matchesFilter;
     });
 
     filtered.forEach(item => {
         const tr = document.createElement('tr');
-        const badgeClass = item.type === 'Classical' ? 'badge-classical' : 'badge-novel';
         tr.innerHTML = `
-            <td>
-                <div style="font-weight: 700; font-size: 14px; color: var(--navy-dark);">${item.name}</div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${item.class}</div>
-            </td>
-            <td>
-                <span class="section-badge ${badgeClass}" style="font-size: 10px; margin-bottom: 2px; display: inline-block;">${item.type.toUpperCase()}</span>
-                <div style="font-size: 10px; font-weight: bold; color: var(--royal-blue);">${item.domain}</div>
-            </td>
-            <td>
-                <span class="year-pill" style="font-size: 10.5px;">${item.discovery}</span>
-            </td>
-            <td>
-                <span style="font-size: 12.5px; font-weight: 600; color: var(--navy-dark);">${item.origin}</span>
-            </td>
-            <td>
-                <div style="font-size: 13px; line-height: 1.45;">${item.function}</div>
-            </td>
-            <td>
-                <div style="font-size: 12.5px; font-weight: 700; color: var(--crimson);">${item.status}</div>
-            </td>
+            <td><strong>${item.name}</strong></td>
+            <td><span class="section-badge badge-${item.domain.toLowerCase()}" style="font-size: 10px; margin-bottom: 0;">${item.domain.toUpperCase()}</span></td>
+            <td>${item.class}</td>
+            <td>${item.function}</td>
+            <td><strong>${item.status}</strong></td>
         `;
         tbody.appendChild(tr);
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 24px;">No biomarkers match your search query.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 20px;">No biomarkers match your search query.</td></tr>`;
     }
 }
 
