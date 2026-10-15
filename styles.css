@@ -516,6 +516,14 @@ h1, h2, h3, h4, h5, h6,
     font-size: 14.5px;
 }
 
+.section-dark .bento-card p, .section-deep .bento-card p {
+    color: #CBD5E1;
+}
+
+.section-light .bento-card p {
+    color: var(--text-dark);
+}
+
 .bento-card p:last-child {
     margin-bottom: 0;
 }
@@ -863,6 +871,78 @@ h1, h2, h3, h4, h5, h6,
 }
 .result-callout.alert-crimson {
     border-left-color: var(--crimson);
+}
+
+/* -------------------------------------------------------------
+   PEDAGOGICAL DEEP DIVE SECTIONS & SHOWCASES
+   ------------------------------------------------------------- */
+.deep-dive-container {
+    background-color: #FFFFFF;
+    border: 2px solid var(--royal-blue);
+    border-left: 6px solid var(--crimson);
+    padding: 32px;
+    margin: 44px 0;
+    box-shadow: 0 6px 25px rgba(0,0,0,0.06);
+}
+
+.section-dark .deep-dive-container, .section-deep .deep-dive-container {
+    background-color: var(--navy-surface);
+    border-color: var(--royal-blue);
+    border-left-color: var(--gold);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.deep-dive-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    background-color: var(--crimson);
+    color: #FFFFFF;
+    margin-bottom: 12px;
+}
+
+.section-dark .deep-dive-tag, .section-deep .deep-dive-tag {
+    background-color: var(--gold);
+    color: var(--navy-dark);
+}
+
+.deep-dive-title {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    line-height: 1.25;
+    margin-bottom: 12px;
+    color: var(--navy-dark);
+}
+
+.section-dark .deep-dive-title, .section-deep .deep-dive-title {
+    color: #FFFFFF;
+}
+
+.deep-dive-lead {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+}
+
+.section-dark .deep-dive-lead, .section-deep .deep-dive-lead {
+    color: #CBD5E1;
+}
+
+.deep-dive-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: start;
+}
+
+@media (max-width: 960px) {
+    .deep-dive-grid-2 {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* -------------------------------------------------------------
